@@ -15,4 +15,12 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/AdminService': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+      }
+    }
+  }
 })
