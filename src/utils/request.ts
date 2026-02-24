@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 const request = axios.create({
   timeout: 5000
@@ -27,7 +28,14 @@ request.interceptors.response.use(
     return res
   },
   error => {
-    ElMessage.error(error.response?.data?.message || '网络请求失败')
+    // 处理 401 未授权 (Token 过期或无效)
+    if (error.response && error.response.status === 401) {
+      ElMessage.error('登录已过期，请重新登录')
+      localStorage.removeItem('admin_token')
+      router.push('/login')
+    } else {
+      ElMessage.error(error.response?.data?.message || '网络请求失败')
+    }
     return Promise.reject(error)
   }
 )

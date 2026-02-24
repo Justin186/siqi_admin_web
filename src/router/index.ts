@@ -26,19 +26,19 @@ const router = createRouter({
         {
           path: 'perm-manage',
           name: 'PermManage',
-          component: () => import('../views/AppManageView.vue'), // 暂时复用
+          component: () => import('../views/PermManageView.vue'),
           meta: { title: '权限管理' }
         },
         {
           path: 'role-manage',
           name: 'RoleManage',
-          component: () => import('../views/AppManageView.vue'), // 暂时复用
+          component: () => import('../views/RoleManageView.vue'),
           meta: { title: '角色与授权' }
         },
         {
           path: 'audit-log',
           name: 'AuditLog',
-          component: () => import('../views/AppManageView.vue'), // 暂时复用
+          component: () => import('../views/AuditLogView.vue'),
           meta: { title: '审计日志' }
         }
       ]

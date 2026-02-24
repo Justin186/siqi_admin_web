@@ -1,40 +1,48 @@
 <template>
-  <div class="app-manage">
+  <div class="perm-manage">
     <el-card class="box-card">
       <!-- 顶部操作栏 -->
       <div class="toolbar">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon> 新增应用
-        </el-button>
-        <el-button @click="fetchData">
-          <el-icon><Refresh /></el-icon> 刷新
-        </el-button>
+        <div class="toolbar-left">
+          <span class="label">所属应用：</span>
+          <el-select 
+            v-model="currentAppCode" 
+            placeholder="请选择应用" 
+            style="width: 240px"
+            @change="handleAppChange"
+          >
+            <el-option
+              v-for="app in appList"
+              :key="app.app_code"
+              :label="`${app.app_name} (${app.app_code})`"
+              :value="app.app_code"
+            />
+          </el-select>
+        </div>
+        <div class="toolbar-right">
+          <el-button type="primary" @click="handleAdd" :disabled="!currentAppCode">
+            <el-icon><Plus /></el-icon> 新增权限
+          </el-button>
+          <el-button @click="fetchData" :disabled="!currentAppCode">
+            <el-icon><Refresh /></el-icon> 刷新
+          </el-button>
+        </div>
       </div>
 
       <!-- 数据表格 -->
       <el-table :data="tableData" v-loading="loading" border style="width: 100%; margin-top: 20px">
         <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="app_name" label="应用名称" width="180" />
-        <el-table-column prop="app_code" label="应用代号" width="180" />
-        <el-table-column prop="description" label="描述" />
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="perm_name" label="权限名称" width="180" />
+        <el-table-column prop="perm_key" label="权限标识" width="220">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ scope.row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            <el-tag type="info">{{ scope.row.perm_key }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="description" label="描述" />
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="250" fixed="right" align="center">
+        <el-table-column label="操作" width="180" fixed="right" align="center">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button 
-              size="small" 
-              :type="scope.row.status === 1 ? 'warning' : 'success'"
-              @click="handleToggleStatus(scope.row)"
-            >
-              {{ scope.row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
             <el-button 
               size="small" 
               type="danger" 
@@ -56,6 +64,7 @@
           :total="total"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
+          :disabled="!currentAppCode"
         />
       </div>
     </el-card>
@@ -63,19 +72,19 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑应用' : '新增应用'"
+      :title="isEdit ? '编辑权限' : '新增权限'"
       width="500px"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="应用名称" prop="app_name">
-          <el-input v-model="form.app_name" placeholder="例如：课程群Bot" />
+        <el-form-item label="权限名称" prop="perm_name">
+          <el-input v-model="form.perm_name" placeholder="例如：踢人" />
         </el-form-item>
-        <el-form-item label="应用代号" prop="app_code">
-          <el-input v-model="form.app_code" placeholder="例如：course_bot" :disabled="isEdit" />
-          <div class="form-tip" v-if="!isEdit">代号创建后不可修改，用于API调用</div>
+        <el-form-item label="权限标识" prop="perm_key">
+          <el-input v-model="form.perm_key" placeholder="例如：member:kick" :disabled="isEdit" />
+          <div class="form-tip" v-if="!isEdit">标识创建后不可修改，建议使用 模块:动作 格式</div>
         </el-form-item>
         <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" rows="3" placeholder="请输入应用描述" />
+          <el-input v-model="form.description" type="textarea" rows="3" placeholder="请输入权限描述" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -95,6 +104,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import request from '@/utils/request'
 
+// 应用列表数据
+const appList = ref<any[]>([])
+const currentAppCode = ref('')
+
 // 表格数据
 const tableData = ref([])
 const loading = ref(false)
@@ -109,28 +122,57 @@ const submitLoading = ref(false)
 const formRef = ref<FormInstance>()
 
 const form = reactive({
-  app_name: '',
-  app_code: '',
+  perm_name: '',
+  perm_key: '',
   description: ''
 })
 
 const rules = reactive<FormRules>({
-  app_name: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
-  app_code: [
-    { required: true, message: '请输入应用代号', trigger: 'blur' },
-    { pattern: /^[a-zA-Z0-9_]+$/, message: '代号只能包含字母、数字和下划线', trigger: 'blur' }
+  perm_name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
+  perm_key: [
+    { required: true, message: '请输入权限标识', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_:]+$/, message: '标识只能包含字母、数字、下划线和冒号', trigger: 'blur' }
   ]
 })
 
-// 获取数据
+// 获取应用列表 (用于下拉框)
+const fetchAppList = async () => {
+  try {
+    // 获取所有应用，不分页（假设应用数量不会特别巨大，或者可以设置一个较大的 page_size）
+    const res: any = await request.post('/AdminService/ListApps', {
+      page: 1,
+      page_size: 1000
+    })
+    appList.value = res.apps || []
+    
+    // 如果有应用，默认选中第一个，并加载其权限
+    if (appList.value.length > 0) {
+      currentAppCode.value = appList.value[0].app_code
+      fetchData()
+    }
+  } catch (error) {
+    console.error('获取应用列表失败:', error)
+  }
+}
+
+// 切换应用时触发
+const handleAppChange = () => {
+  currentPage.value = 1
+  fetchData()
+}
+
+// 获取权限列表数据
 const fetchData = async () => {
+  if (!currentAppCode.value) return
+  
   loading.value = true
   try {
-    const res: any = await request.post('/AdminService/ListApps', {
+    const res: any = await request.post('/AdminService/ListPermissions', {
+      app_code: currentAppCode.value,
       page: currentPage.value,
       page_size: pageSize.value
     })
-    tableData.value = res.apps || []
+    tableData.value = res.permissions || []
     total.value = res.total || 0
   } catch (error) {
     console.error(error)
@@ -152,19 +194,18 @@ const handleCurrentChange = (val: number) => {
 // 打开新增弹窗
 const handleAdd = () => {
   isEdit.value = false
-  form.app_name = ''
-  form.app_code = ''
+  form.perm_name = ''
+  form.perm_key = ''
   form.description = ''
   dialogVisible.value = true
-  // 清除之前的校验状态
   setTimeout(() => formRef.value?.clearValidate(), 0)
 }
 
 // 打开编辑弹窗
 const handleEdit = (row: any) => {
   isEdit.value = true
-  form.app_name = row.app_name
-  form.app_code = row.app_code
+  form.perm_name = row.perm_name
+  form.perm_key = row.perm_key
   form.description = row.description
   dialogVisible.value = true
 }
@@ -176,13 +217,17 @@ const submitForm = async () => {
     if (valid) {
       submitLoading.value = true
       try {
-        const url = isEdit.value ? '/AdminService/UpdateApp' : '/AdminService/CreateApp'
-        const res: any = await request.post(url, form)
+        const url = isEdit.value ? '/AdminService/UpdatePermission' : '/AdminService/CreatePermission'
+        const payload = {
+          app_code: currentAppCode.value,
+          ...form
+        }
+        const res: any = await request.post(url, payload)
         
         if (res.success) {
           ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
           dialogVisible.value = false
-          fetchData() // 刷新列表
+          fetchData()
         }
       } catch (error) {
         console.error(error)
@@ -193,37 +238,11 @@ const submitForm = async () => {
   })
 }
 
-// 切换状态 (禁用/启用)
-const handleToggleStatus = async (row: any) => {
-  const actionText = row.status === 1 ? '禁用' : '启用'
-  const newStatus = row.status === 1 ? 0 : 1
-  
-  try {
-    await ElMessageBox.confirm(`确定要${actionText}应用 [${row.app_name}] 吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    
-    const res: any = await request.post('/AdminService/UpdateApp', {
-      app_code: row.app_code,
-      status: newStatus
-    })
-    
-    if (res.success) {
-      ElMessage.success(`${actionText}成功`)
-      fetchData()
-    }
-  } catch (error) {
-    // 用户取消操作
-  }
-}
-
-// 删除应用
+// 删除权限
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除应用 [${row.app_name}] 吗？此操作不可恢复！`,
+      `确定要删除权限 [${row.perm_name}] 吗？此操作不可恢复！`,
       '危险操作',
       {
         confirmButtonText: '确定删除',
@@ -232,13 +251,13 @@ const handleDelete = async (row: any) => {
       }
     )
     
-    const res: any = await request.post('/AdminService/DeleteApp', {
-      app_code: row.app_code
+    const res: any = await request.post('/AdminService/DeletePermission', {
+      app_code: currentAppCode.value,
+      perm_key: row.perm_key
     })
     
     if (res.success) {
       ElMessage.success('删除成功')
-      // 如果当前页只有一条数据，且不是第一页，删除后跳到上一页
       if (tableData.value.length === 1 && currentPage.value > 1) {
         currentPage.value--
       }
@@ -250,7 +269,7 @@ const handleDelete = async (row: any) => {
 }
 
 onMounted(() => {
-  fetchData()
+  fetchAppList()
 })
 </script>
 
@@ -258,7 +277,19 @@ onMounted(() => {
 .toolbar {
   margin-bottom: 20px;
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-left .label {
+  font-size: 14px;
+  color: #606266;
+  margin-right: 10px;
 }
 
 .pagination-container {
