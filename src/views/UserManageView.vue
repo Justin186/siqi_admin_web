@@ -59,6 +59,22 @@
             <span v-else style="color: #909399; font-size: 13px;">暂无角色</span>
           </template>
         </el-table-column>
+        <el-table-column label="拥有的权限">
+          <template #default="scope">
+            <div v-if="scope.row.perm_keys && scope.row.perm_keys.length > 0" class="role-tags">
+              <el-tag 
+                v-for="permKey in scope.row.perm_keys" 
+                :key="permKey"
+                size="small"
+                type="success"
+                class="role-tag"
+              >
+                {{ getPermName(permKey) }} ({{ permKey }})
+              </el-tag>
+            </div>
+            <span v-else style="color: #909399; font-size: 13px;">暂无权限</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="scope">
             <el-button size="small" type="primary" plain @click="handleEditRoles(scope.row)">编辑角色</el-button>
@@ -129,6 +145,7 @@ const roleDrawerVisible = ref(false)
 const roleLoading = ref(false)
 const currentUser = ref<any>(null)
 const allRoles = ref<any[]>([]) // 当前应用下的所有角色
+const allPerms = ref<any[]>([]) // 当前应用下的所有权限
 const selectedRoles = ref<string[]>([]) // 穿梭框右侧已选数据 (role_key 数组)
 
 // ==========================================
@@ -143,6 +160,7 @@ const fetchAppList = async () => {
     if (appList.value.length > 0) {
       currentAppCode.value = appList.value[0].app_code
       await fetchAllRoles()
+      await fetchAllPerms()
       fetchData()
     }
   } catch (error) {
@@ -154,6 +172,7 @@ const handleAppChange = async () => {
   currentPage.value = 1
   searchUserId.value = ''
   await fetchAllRoles()
+  await fetchAllPerms()
   fetchData()
 }
 
@@ -178,6 +197,24 @@ const fetchAllRoles = async () => {
 const getRoleName = (roleKey: string) => {
   const role = allRoles.value.find(r => r.role_key === roleKey)
   return role ? role.role_name : '未知角色'
+}
+
+// 获取当前应用的所有权限，用于映射权限名称
+const fetchAllPerms = async () => {
+  if (!currentAppCode.value) return
+  try {
+    const res: any = await request.post('/AdminService/ListPermissions', {
+      app_code: currentAppCode.value, page: 1, page_size: 1000
+    })
+    allPerms.value = res.permissions || []
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const getPermName = (permKey: string) => {
+  const perm = allPerms.value.find(p => p.perm_key === permKey)
+  return perm ? perm.perm_name : '未知权限'
 }
 
 // 获取用户角色列表
