@@ -20,6 +20,10 @@ export default defineConfig({
       '/AdminService': {
         target: 'http://localhost:8888',
         changeOrigin: true,
+      },
+      '/AuthService': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
       }
     }
   },

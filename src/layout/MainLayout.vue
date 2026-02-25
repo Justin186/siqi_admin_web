@@ -33,6 +33,10 @@
           <el-icon><Document /></el-icon>
           <span>审计日志</span>
         </el-menu-item>
+        <el-menu-item index="/test-auth">
+          <el-icon><Monitor /></el-icon>
+          <span>权限测试</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -72,7 +76,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Menu, Key, UserFilled, List, Document, ArrowDown } from '@element-plus/icons-vue'
+import { Menu, Key, UserFilled, List, Document, ArrowDown, Monitor } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()

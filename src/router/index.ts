@@ -46,6 +46,12 @@ const router = createRouter({
           name: 'AuditLog',
           component: () => import('../views/AuditLogView.vue'),
           meta: { title: '审计日志' }
+        },
+        {
+          path: 'test-auth',
+          name: 'TestAuth',
+          component: () => import('../views/TestAuthView.vue'),
+          meta: { title: '权限测试' }
         }
       ]
     }
