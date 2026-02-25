@@ -22,5 +22,15 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          'element-plus': ['element-plus']
+        }
+      }
+    }
   }
 })

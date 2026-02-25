@@ -138,20 +138,34 @@ npm run build
 将 `dist/` 目录下的文件部署到 Nginx 或其他静态 Web 服务器。
 同时，需要在 Nginx 中配置反向代理，将 API 请求转发到 C++ bRPC 后端服务。
 
-**Nginx 配置示例：**
+#### Nginx 部署详细步骤 (Ubuntu/Debian)
+
+**1. 安装 Nginx**
+```bash
+sudo apt-get update
+sudo apt-get install -y nginx
+```
+
+**2. 创建 Nginx 配置文件**
+在 `/etc/nginx/sites-available/` 目录下创建一个名为 `siqi_admin_web` 的文件：
+```bash
+sudo nano /etc/nginx/sites-available/siqi_admin_web
+```
+将以下内容粘贴进去（注意修改 `root` 路径为你实际的 `dist` 文件夹路径，以及 `server_name` 为你的域名或 IP）：
 ```nginx
 server {
     listen 80;
-    server_name your_domain.com;
+    server_name localhost; # 如果有域名，替换为你的域名
 
     # 静态文件服务
     location / {
-        root /path/to/siqi_admin_web/dist;
+        # 【重要】这里必须指向你打包生成的 dist 文件夹的绝对路径
+        root /home/justin/siqi_admin_web/dist;
         index index.html;
         try_files $uri $uri/ /index.html; # 支持 Vue Router 的 History 模式
     }
 
-    # API 反向代理
+    # API 反向代理，解决跨域问题
     location /AdminService/ {
         proxy_pass http://127.0.0.1:8888/AdminService/;
         proxy_set_header Host $host;
@@ -159,3 +173,34 @@ server {
     }
 }
 ```
+
+**3. 启用配置并清理默认配置**
+```bash
+# 创建软链接启用配置
+sudo ln -s /etc/nginx/sites-available/siqi_admin_web /etc/nginx/sites-enabled/
+
+# 删除 Nginx 默认配置，防止 80 端口冲突
+sudo rm /etc/nginx/sites-enabled/default
+```
+
+**4. 解决权限问题 (如果 dist 文件夹在用户目录下)**
+如果你的 `dist` 文件夹在 `/home/用户名/` 目录下，Nginx 默认的 `www-data` 用户可能没有权限读取，会导致访问时出现 `500 Internal Server Error` 或 `403 Forbidden`。
+需要修改 Nginx 的运行用户：
+```bash
+# 打开 Nginx 主配置文件
+sudo nano /etc/nginx/nginx.conf
+
+# 找到第一行的 `user www-data;`，将其修改为你的当前用户名，例如：
+# user justin;
+```
+
+**5. 测试并重启 Nginx**
+```bash
+# 测试配置文件语法是否正确
+sudo nginx -t
+
+# 重启 Nginx 使配置生效
+sudo systemctl restart nginx
+```
+
+完成以上步骤后，直接在浏览器访问 `http://你的服务器IP` 即可看到部署好的管理后台。
