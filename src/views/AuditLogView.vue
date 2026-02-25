@@ -137,6 +137,11 @@ const fetchAppList = async () => {
   try {
     const res: any = await request.post('/AdminService/ListApps', { page: 1, page_size: 1000 })
     appList.value = res.apps || []
+    
+    const savedAppCode = localStorage.getItem('auditLogAppCode')
+    if (savedAppCode && appList.value.some(app => app.app_code === savedAppCode)) {
+      searchForm.app_code = savedAppCode
+    }
   } catch (error) {
     console.error(error)
   }
@@ -167,6 +172,11 @@ const fetchData = async () => {
 }
 
 const handleSearch = () => {
+  if (searchForm.app_code) {
+    localStorage.setItem('auditLogAppCode', searchForm.app_code)
+  } else {
+    localStorage.removeItem('auditLogAppCode')
+  }
   currentPage.value = 1
   fetchData()
 }
@@ -176,6 +186,7 @@ const resetSearch = () => {
   searchForm.action = ''
   searchForm.operator_id = ''
   searchForm.target_id = ''
+  localStorage.removeItem('auditLogAppCode')
   handleSearch()
 }
 

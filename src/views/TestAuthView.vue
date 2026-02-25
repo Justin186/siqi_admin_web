@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 
@@ -64,6 +64,26 @@ const form = reactive({
   user_id: '',
   perm_key: ''
 })
+
+// 从 localStorage 恢复数据
+onMounted(() => {
+  const savedForm = localStorage.getItem('testAuthForm')
+  if (savedForm) {
+    try {
+      const parsed = JSON.parse(savedForm)
+      form.app_code = parsed.app_code || ''
+      form.user_id = parsed.user_id || ''
+      form.perm_key = parsed.perm_key || ''
+    } catch (e) {
+      console.error('Failed to parse saved form data', e)
+    }
+  }
+})
+
+// 监听 form 变化并保存到 localStorage
+watch(form, (newVal) => {
+  localStorage.setItem('testAuthForm', JSON.stringify(newVal))
+}, { deep: true })
 
 const loading = ref(false)
 const result = ref<any>(null)

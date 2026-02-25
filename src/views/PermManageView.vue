@@ -145,8 +145,13 @@ const fetchAppList = async () => {
     })
     appList.value = res.apps || []
     
-    // 如果有应用，默认选中第一个，并加载其权限
-    if (appList.value.length > 0) {
+    // 尝试从 localStorage 恢复选中的应用
+    const savedAppCode = localStorage.getItem('permManageAppCode')
+    if (savedAppCode && appList.value.some(app => app.app_code === savedAppCode)) {
+      currentAppCode.value = savedAppCode
+      fetchData()
+    } else if (appList.value.length > 0) {
+      // 如果有应用，默认选中第一个，并加载其权限
       currentAppCode.value = appList.value[0].app_code
       fetchData()
     }
@@ -157,6 +162,7 @@ const fetchAppList = async () => {
 
 // 切换应用时触发
 const handleAppChange = () => {
+  localStorage.setItem('permManageAppCode', currentAppCode.value)
   currentPage.value = 1
   fetchData()
 }

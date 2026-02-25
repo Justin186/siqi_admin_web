@@ -232,7 +232,12 @@ const fetchAppList = async () => {
   try {
     const res: any = await request.post('/AdminService/ListApps', { page: 1, page_size: 1000 })
     appList.value = res.apps || []
-    if (appList.value.length > 0) {
+    
+    const savedAppCode = localStorage.getItem('roleManageAppCode')
+    if (savedAppCode && appList.value.some(app => app.app_code === savedAppCode)) {
+      currentAppCode.value = savedAppCode
+      fetchData()
+    } else if (appList.value.length > 0) {
       currentAppCode.value = appList.value[0].app_code
       fetchData()
     }
@@ -242,6 +247,7 @@ const fetchAppList = async () => {
 }
 
 const handleAppChange = () => {
+  localStorage.setItem('roleManageAppCode', currentAppCode.value)
   currentPage.value = 1
   fetchData()
 }

@@ -41,6 +41,7 @@ siqi_admin_web/
 │   │   ├── PermManageView.vue  # 权限管理：权限的定义与维护
 │   │   ├── RoleManageView.vue  # 角色与授权：角色定义、权限分配、用户绑定
 │   │   ├── UserManageView.vue  # 用户列表：以用户为视角的角色分配与概览
+│   │   └── TestAuthView.vue    # 权限测试：模拟业务系统调用鉴权接口
 │   ├── App.vue             # 根组件
 │   └── main.ts             # 项目入口文件，注册插件与挂载应用
 ├── index.html              # HTML 模板
@@ -79,6 +80,12 @@ siqi_admin_web/
 - 记录所有管理员的敏感操作（如创建应用、分配角色、删除权限等）。
 - 支持按应用、操作类型、操作人、目标对象进行多条件组合检索。
 - 自动将后端的英文操作动作（如 `USER_GRANT_ROLE`）映射为易读的中文标签（如 `授权用户`）。
+
+### 7. 权限测试 (`/test-auth`)
+- 提供可视化的权限测试工具，替代 CLI 的 `curl` 命令。
+- 模拟业务系统调用 `/AuthService/Check` 接口。
+- 直观展示鉴权结果（通过/拒绝），并提供详细的拒绝原因、当前角色和建议角色。
+- 自动保存测试参数到本地，方便反复调试。
 
 ## 开发与部署指南
 
@@ -168,6 +175,13 @@ server {
     # API 反向代理，解决跨域问题
     location /AdminService/ {
         proxy_pass http://127.0.0.1:8888/AdminService/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # 鉴权接口反向代理
+    location /AuthService/ {
+        proxy_pass http://127.0.0.1:8888/AuthService/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
