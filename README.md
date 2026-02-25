@@ -84,7 +84,32 @@ siqi_admin_web/
 
 ### 环境准备
 
-确保你的本地环境已安装 [Node.js](https://nodejs.org/) (推荐 v18+)。
+1. **Node.js**: 确保你的本地环境已安装 [Node.js](https://nodejs.org/) (推荐 v20)。
+```bash
+# 1. 下载并运行 Node.js 20 的安装脚本
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+# 2. 安装 Node.js (这会自动包含 npm)
+sudo apt-get install -y nodejs
+
+# 3. 验证安装是否成功
+node -v  # 应该输出 v20.x.x
+npm -v   # 应该输出 10.x.x
+```
+2. **后端服务**: 确保 C++ bRPC 后端服务 (`auth_server`) 已启动并监听在 `8888` 端口。
+```bash
+# 在 auth_server 的机器上执行
+./build/auth_server --flagfile=conf/server.conf
+```
+> **注意**: 开启后端服务的机器必须确保连接的是主数据库(Master)，因为从数据库(Slave)是只读的并且主从是为了同步数据的，如果连接了从数据库，虽然前端界面可以正常访问，但所有的增删改操作都会失败。
+3. **网络打通 (如果后端在远程服务器)**:
+如果你的后端服务部署在远程服务器上，而你在本地开发，可以通过 SSH 隧道将远程的 `8888` 端口映射到本地，以便前端的代理能够正常工作：
+```bash
+# 将远程服务器的 8888 端口映射到本地的 8888 端口
+ssh -N -f -L 8888:127.0.0.1:8888 ubuntu@<远程服务器_IP>
+# 如果主数据库所在的机器暂时开不了 auth_server，也可以将远程服务器的SQL主数据库的 3306 端口映射到本地的 13306 端口，然后在配置文件 server.conf 中将数据库端口改为 13306 并启动 auth_server
+ssh -N -f -L 13306:127.0.0.1:3306 ubuntu@<远程服务器_IP>
+```
 
 ### 1. 安装依赖
 
