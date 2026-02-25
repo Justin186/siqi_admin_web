@@ -25,6 +25,10 @@
           <el-icon><UserFilled /></el-icon>
           <span>角色与授权</span>
         </el-menu-item>
+        <el-menu-item index="/user-manage">
+          <el-icon><List /></el-icon>
+          <span>用户列表</span>
+        </el-menu-item>
         <el-menu-item index="/audit-log">
           <el-icon><Document /></el-icon>
           <span>审计日志</span>
@@ -68,7 +72,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Menu, Key, UserFilled, Document, ArrowDown } from '@element-plus/icons-vue'
+import { Menu, Key, UserFilled, List, Document, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()

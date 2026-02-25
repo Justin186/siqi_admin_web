@@ -36,6 +36,12 @@ const router = createRouter({
           meta: { title: '角色与授权' }
         },
         {
+          path: 'user-manage',
+          name: 'UserManage',
+          component: () => import('../views/UserManageView.vue'),
+          meta: { title: '用户列表' }
+        },
+        {
           path: 'audit-log',
           name: 'AuditLog',
           component: () => import('../views/AuditLogView.vue'),
