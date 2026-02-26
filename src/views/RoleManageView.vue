@@ -39,6 +39,23 @@
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" />
+        <el-table-column label="拥有权限" min-width="200">
+          <template #default="scope">
+            <div class="perm-tags">
+              <el-tag 
+                v-for="perm in scope.row.perm_keys" 
+                :key="perm" 
+                size="small" 
+                type="success"
+                effect="plain"
+                style="margin-right: 5px; margin-bottom: 5px"
+              >
+                {{ perm }}
+              </el-tag>
+              <span v-if="!scope.row.perm_keys || scope.row.perm_keys.length === 0" style="color: #999; font-size: 12px">暂无权限</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="is_default" label="默认角色" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.is_default ? 'success' : 'info'">
@@ -384,6 +401,7 @@ const handlePermChange = async (
       })
     }
     ElMessage.success(isAdd ? '添加权限成功' : '移除权限成功')
+    fetchData() // 刷新角色列表，更新表格中的“拥有权限”列
   } catch (error) {
     console.error(error)
     // 如果失败，重新拉取数据恢复穿梭框状态
