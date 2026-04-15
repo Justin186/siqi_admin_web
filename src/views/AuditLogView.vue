@@ -5,9 +5,9 @@
       <div class="toolbar">
         <el-form :inline="true" :model="searchForm" class="search-form">
           <el-form-item label="所属应用">
-            <el-select 
-              v-model="searchForm.app_code" 
-              placeholder="请选择应用" 
+            <el-select
+              v-model="searchForm.app_code"
+              placeholder="请选择应用"
               style="width: 200px"
               clearable
               @change="handleSearch"
@@ -42,6 +42,17 @@
           </el-form-item>
           <el-form-item label="目标对象ID">
             <el-input v-model="searchForm.target_id" placeholder="请输入目标对象ID" clearable />
+          </el-form-item>
+          <el-form-item label="时间范围">
+            <el-date-picker
+              v-model="searchForm.time_range"
+              type="datetimerange"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              clearable
+              style="width: 360px"
+            />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
@@ -118,7 +129,8 @@ const searchForm = reactive({
   app_code: '',
   action: '',
   operator_id: '',
-  target_id: ''
+  target_id: '',
+  time_range: [] as [Date, Date] | []
 })
 
 // --- 表格数据 ---
@@ -132,12 +144,12 @@ const total = ref(0)
 // 基础方法
 // ==========================================
 
-// 获取应用列表 (用于下拉框)
+// 获取应用列表（用于下拉框）
 const fetchAppList = async () => {
   try {
     const res: any = await request.post('/AdminService/ListApps', { page: 1, page_size: 1000 })
     appList.value = res.apps || []
-    
+
     const savedAppCode = localStorage.getItem('auditLogAppCode')
     if (savedAppCode && appList.value.some(app => app.app_code === savedAppCode)) {
       searchForm.app_code = savedAppCode
@@ -155,11 +167,15 @@ const fetchData = async () => {
       page: currentPage.value,
       page_size: pageSize.value
     }
-    
+
     if (searchForm.app_code) payload.app_code = searchForm.app_code
     if (searchForm.action) payload.action = searchForm.action
     if (searchForm.operator_id) payload.operator_id = searchForm.operator_id
     if (searchForm.target_id) payload.target_id = searchForm.target_id
+    if (searchForm.time_range.length === 2) {
+      payload.start_time = Math.floor(searchForm.time_range[0].getTime() / 1000)
+      payload.end_time = Math.floor(searchForm.time_range[1].getTime() / 1000)
+    }
 
     const res: any = await request.post('/AdminService/ListAuditLogs', payload)
     tableData.value = res.logs || []
@@ -186,6 +202,7 @@ const resetSearch = () => {
   searchForm.action = ''
   searchForm.operator_id = ''
   searchForm.target_id = ''
+  searchForm.time_range = []
   localStorage.removeItem('auditLogAppCode')
   handleSearch()
 }
@@ -199,24 +216,23 @@ const handleCurrentChange = (val: number) => { currentPage.value = val; fetchDat
 
 const getActionLabel = (action: string) => {
   const map: Record<string, string> = {
-    'CREATE_APP': '创建应用',
-    'UPDATE_APP': '更新应用',
-    'DELETE_APP': '删除应用',
-    'CREATE_ROLE': '创建角色',
-    'UPDATE_ROLE': '更新角色',
-    'DELETE_ROLE': '删除角色',
-    'CREATE_PERM': '创建权限',
-    'UPDATE_PERM': '更新权限',
-    'DELETE_PERM': '删除权限',
-    'ASSIGN_PERM': '分配权限',
-    'REMOVE_PERM': '移除权限',
-    'GRANT_ROLE': '授权用户',
-    'REVOKE_ROLE': '撤销授权',
-    // 兼容后端实际写入的日志类型
-    'ROLE_ADD_PERM': '分配权限',
-    'ROLE_REMOVE_PERM': '移除权限',
-    'USER_GRANT_ROLE': '授权用户',
-    'USER_REVOKE_ROLE': '撤销授权'
+    CREATE_APP: '创建应用',
+    UPDATE_APP: '更新应用',
+    DELETE_APP: '删除应用',
+    CREATE_ROLE: '创建角色',
+    UPDATE_ROLE: '更新角色',
+    DELETE_ROLE: '删除角色',
+    CREATE_PERM: '创建权限',
+    UPDATE_PERM: '更新权限',
+    DELETE_PERM: '删除权限',
+    ASSIGN_PERM: '分配权限',
+    REMOVE_PERM: '移除权限',
+    GRANT_ROLE: '授权用户',
+    REVOKE_ROLE: '撤销授权',
+    ROLE_ADD_PERM: '分配权限',
+    ROLE_REMOVE_PERM: '移除权限',
+    USER_GRANT_ROLE: '授权用户',
+    USER_REVOKE_ROLE: '撤销授权'
   }
   return map[action] || action
 }

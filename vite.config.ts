@@ -18,11 +18,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/AdminService': {
-        target: 'http://localhost:8888',
+        target: 'http://localhost:8001',
         changeOrigin: true,
       },
       '/AuthService': {
-        target: 'http://localhost:8888',
+        target: 'http://localhost:8001',
         changeOrigin: true,
       }
     }
